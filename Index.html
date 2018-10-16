@@ -1,0 +1,602 @@
+<html>
+<head>
+
+
+   <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+
+  <!-- tabletop is used to get data from googlesheets -->
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.5.1/tabletop.min.js'></script>
+
+  <!-- d3 library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.3/d3.min.js"></script>
+
+  <!-- topojson data format to plot map -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script>
+
+  <script src="datamaps.all.min.js"></script>
+<!-- jquery  -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+  <title>UFO Sightings</title>
+  <style type="text/css">
+
+  p {
+    font-size: 20px;
+    color: orangered;
+  }
+  body{
+    color:black;
+    padding-top: 65px;
+    font-family: "Comic sans MS",cursive,sans-serif;
+
+     }
+
+  svg, text{
+    font-family: "Comic sans MS",cursive,sans-serif;
+
+
+  }
+  .container {
+    float: left;
+  }
+
+  .bar {
+    fill-opacity: .9;
+    }
+
+  .line-chart
+  {
+    border: 1px solid lightgray;
+  }
+
+
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+  .tooltip{     
+   width: 100px;
+   height: 60px;
+   padding: 6px;
+   font: 12px "Comic sans MS",cursive,sans-serif;
+   opacity: 1;
+ }
+
+  .line {
+    fill: none;
+    stroke: #123456;
+    stroke-width: 5px;
+  }
+
+ .overlay {
+  fill: none;
+  pointer-events: all;
+  } 
+
+ .focus circle {
+  fill: #123456;
+  stroke: #123456;
+  stroke-width: 1px;
+}
+  
+  .hover-line {
+  stroke: #123456;
+  stroke-width: 2px;
+  stroke-dasharray: 3,3;
+}
+
+.tooltip {
+  position: absolute;
+  width: 200px;
+  height: 28px;
+  pointer-events: none;
+}
+
+</style>
+
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#Introduction" style="margin-left: -50px">UFO Sightings</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="navbar-nav ml-auto" style="margin-right: -50px">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#linkedCharts">Linked Charts</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#Summary">Summary</a>
+                    </li>
+
+
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+<!---- INTRO   ----------->
+<div class="w3-container" style="margin-top: 10px">
+<h5 style="text-align: left;display: inline-block;margin-left: 20px"><u>Sanika Shah</u></h5>
+<h5 style="text-align: center;display: inline-block;margin-left: 400px"><u>Data Visualization</u></h5>
+<h5 style="text-align: right;display: inline-block;margin-left: 400px"><u>15th October</u></h5>
+</div>
+
+<!------ SVG---------->
+  <div id="linkedCharts">
+        
+ 
+    <p id="wait" style="visibility: visible;margin-left:20px"> Please wait. It'll take some time to load charts</p>
+    <h6 style="margin-left: 20px"> First Dropdown allows to switch between 2 attributes: Total UFO count seen by various states in US and UFO count per capita (per 100k people)</h6>
+<h6 style="margin-left: 20px">Second dropdown allows to switch between 2 map visulizations: Choropleth and Bubble map for a given state</h6><br>
+    <div class="w3-container">
+      <div>
+      <h6 style="float:left;position: relative;margin-left: 25px">Attribute</h6>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <h6 style="float:left;position: relative;margin-left: 80px">Visualization</h6>
+    </div>
+    <div>
+    <select id="Attrcheckbox" style="position: relative;margin-left: -250px;font-size: 13px">
+      <option value="Total UFO" selected="selected" style="font-size: 13px">Total UFO</option>
+      <option value="UFO per capita" style="font-size: 13px">UFO per capita</option>
+    </select>
+
+    <select  id="Typecheckbox" style="position: relative;margin-left: 40px;font-size: 13px">
+      <option value="Choropleth" selected="selected" style="font-size: 13px">Choropleth</option>
+      <option value="Bubble Map" style="font-size: 13px">Bubble Map</option>
+    </select>
+    &nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;<button  class="button" onclick="selectChart()"  style="font-size: 13px">Render</button>
+</div>
+   <h6 style="text-align: right;display: inline-block;margin-left: 20px;margin-top: 20px">Click on the State to see yearwise total UFOs seen by that state</h6><br>
+
+      <h5 id="heading" style="position:relative;margin-left: 200">UFO Sightings</h5>
+        <div id="container" style="position: relative;margin-top:-70px;float:left; width: 600px; height: 500px;">
+        </div>
+        <div style="position: relative;float: left;width: 600px; height: 500px;">
+          <svg id="detailView"></svg>
+        </div>
+    </div>
+  </div>
+
+  <!------ SUMMARY --------->
+<div style="float:left;position: relative;">
+  <div id="Summary" style="position: relative;float:left;margin-left: 20px">
+    <div style="margin-bottom: 70px">
+  <h4><u>Summary</u></h4><br>
+  <u>Dataset: </u>The UFO Sightings dataset is stored as a shared googlesheet in my account.
+  I have used Tabletop library to get data from googlesheet.<br>
+<a href= "https://www.kaggle.com/NUFORC/ufo-sightings">Link to dataset</a>
+  <br><br>
+  <u>Linked Charts:</u>&nbsp; The first chart shows overview of total number of UFOs seen by each state of USA from 1998 to 2014. This can be switched to total UFOs per capita by using dropdown. 
+  For both the attributes, 2 different map visualizations are shown: Choropleth and Bubble Map.<br><br>
+  <u>Interaction:</u> &nbsp;Clicking over the state shows count of UFOs based on their shape. This is shown using Scatter Plot.<br> All the combinations  of attributes and maps support overview-> details interaction and tooltips.<br><br>
+  <u>Extra Credits:</u>&nbsp; For the first part of extra credit, I have added one more map visualization - Bubble Map alongwith Choropleth map.<br> User can switch back and forth between Choropleth Map and Bubble Map.<br>
+  For the second part, I have added two attributes: Total UFO count and UFO count per capita.<br> The idea of UFO per capita was taken from here: <a href="https://gizmodo.com/map-shows-where-ufo-sightings-are-seen-the-most-in-the-1710436655">UFO per capita</a><br>
+  </div>
+</div>
+</div>
+  
+  <script type='text/javascript'>   
+
+
+  var data;
+  var attributeType=0;
+
+  //tabletop get data from googlesheet 
+  var sheetUrl = 'https://docs.google.com/spreadsheets/d/1Q4fAE4A5r8ZVVhVLkAJrImZPgcrTLRXkarRgAJWF3mE/edit?usp=sharing';
+
+  //simplesheet can be set to false for multiplesheets.
+  function init() {
+    Tabletop.init( { key: sheetUrl,
+     callback: showInfo,  
+     simpleSheet: true } )
+  }
+
+  //callback function , called after the data is loaded
+  function showInfo(data1, tabletop) {
+    data = data1;
+    //console.log(data[0]);  
+    document.getElementById("wait").style.visibility="hidden";
+    //default chart
+    renderChoroplethMap(0);
+    //default state detailed view
+    renderScatterPlot("Arizona",0);
+  }
+
+  function selectChart(event){
+
+    var attribute = $('#Attrcheckbox').val();
+    var chartType = $('#Typecheckbox').val();
+
+    console.log(attributeType);
+    console.log(chartType);
+    if(attribute=="Total UFO"){
+        attributeType=0;
+         $("#heading").html("UFO count");
+      }
+    else{
+        attributeType=1;
+        $("#heading").html("UFO count per 100k people");
+      }
+      if(chartType=="Bubble Map"){
+        renderBubbleMap(attributeType);
+      }
+      else{
+        renderChoroplethMap(attributeType);  
+      }
+        renderScatterPlot("Arizona",attributeType);
+      
+
+  }
+
+  function renderChoroplethMap(flag){
+    console.log(flag);
+    var elm = d3.select("#container");
+    elm.selectAll("*").remove();
+
+    var width = 600;
+    var height = 600;
+    var UFOcount;
+    // Total UFO
+    if(flag==0){
+      UFOcount = d3.nest()
+                        .key(function(d) { if (d.Country == "us")  return d.Code; })
+                        .rollup(function(v) { return v.length;})
+                        .entries(data);
+    }
+    // UFO per capita
+      
+    else
+    {
+       UFOcount = d3.nest()
+                        .key(function(d) { if (d.Country == "us")  return d.Code; })
+                        .rollup(function(v) { return v.length/v[0].Population/100000;})
+                        .entries(data);
+
+    }
+    var countOfUFO = [];
+    for(var i in UFOcount)  
+    {
+      if(UFOcount[i].key==""||UFOcount[i].key==null||UFOcount.values==null)
+            delete UFOcount[i];
+      else
+          countOfUFO.push(UFOcount[i].values);  
+     }
+    
+    var minValue = Math.min(...countOfUFO),
+    maxValue = Math.max(...countOfUFO);
+    // console.log(countOfUFO);
+    console.log(minValue+" "+maxValue);
+
+    // create color palette function
+    var paletteScale = d3.scale.linear()
+            .domain([minValue,maxValue])
+            .range(["#EFEFFF","#02386F"]); // blue color
+    dataset={}
+ // fill dataset in appropriate format
+    UFOcount.forEach(function(item){ //
+        // item example value ["USA", 70]
+        var iso = item.key,
+                value = item.values;
+        dataset[iso] = { numberOfThings: value, fillColor: paletteScale(value) };
+    }); 
+
+    // console.log(dataset);
+
+    // since we included all maps limit scope to USA
+    var map = new Datamap({
+        element: document.getElementById('container'),
+        // countries not listed in dataset will be painted with this color
+        fills: { defaultFill: '#F5F5F5' },
+        data: dataset,
+        scope: 'usa',
+        projection: 'equirectangular',
+        geographyConfig: {
+            borderColor: '#DEDEDE',
+            highlightBorderWidth: 2,
+            // don't change color on mouse hover
+            highlightFillColor: function(geo) {
+                return geo['fillColor'] || '#F5F5F5';
+            },
+            // only change border
+            highlightBorderColor: '#B7B7B7',
+            // show desired information in tooltip
+            popupTemplate: function(geo, data) {     
+                 // tooltip content
+                return ['<div class="hoverinfo">',
+                    '<strong>', geo.properties.name, '</strong>',
+                    '<br>UFO Count: <strong>', data.numberOfThings, '</strong>',
+                    '</div>'].join('');
+            }
+        },
+        done: function(datamap) {
+         
+            datamap.svg.selectAll('.datamaps-subunit').on('click', function(geography) {
+                renderScatterPlot(geography.properties.name,flag);
+            });
+        }
+    });
+
+
+  }
+
+
+
+function renderBubbleMap(flag){
+    var elm = d3.select("#container");
+    elm.selectAll("*").remove();
+
+    var width = 600;
+    var height = 600;
+    var UFOcount;
+    //total UFO
+    if(flag==0){
+       UFOcount = d3.nest()
+                        .key(function(d) { if (d.Country == "us")  return d.Code; })
+                        .rollup(function(v) { return v.length;})
+                        .entries(data);
+    }
+    else{
+       UFOcount = d3.nest()
+                        .key(function(d) { if (d.Country == "us")  return d.Code; })
+                        .rollup(function(v) { return v.length/(v[0].Population/100000);})
+                        .entries(data);
+    }
+    // remove null key
+    var countOfUFO = [];
+    for(var i in UFOcount)  
+    {
+      if(UFOcount[i].key==""||UFOcount[i].key==null||UFOcount.values==null)
+            delete UFOcount[i];
+      else
+          countOfUFO.push(UFOcount[i].values);  
+     }
+    
+    var minValue = Math.min(...countOfUFO),
+    maxValue = Math.max(...countOfUFO);
+
+    console.log(minValue+" "+maxValue);
+
+    var ufos = [];
+    var circleScale;
+    if(flag==0)
+     circleScale = d3.scale.sqrt().domain([minValue, maxValue]).range([0, 30]);
+    else
+      circleScale =  d3.scale.sqrt().domain([minValue, maxValue]).range([0, 20]);
+    var stateData;
+    //collect data for each state
+    if(flag==0){
+        stateData = d3.nest()
+                  .key(function(d) { if (d.Country == "us")  return d.State; })
+                  .rollup(function(v) { return {"latitude":v[0].Latitude,"longitude":v[0].Longitude,"code":v[0].Code,"ufocount":v.length}})
+                  .entries(data);
+    }
+    else{
+        stateData = d3.nest()
+                  .key(function(d) { if (d.Country == "us")  return d.State; })
+                  .rollup(function(v) { return {"latitude":v[0].Latitude,"longitude":v[0].Longitude,"code":v[0].Code,"ufocount":v.length/(v[0].Population/100000)}})
+                  .entries(data);
+
+    }
+    // console.log(stateData);
+    for(var i in stateData){
+      if(!(stateData[i].key==""||stateData[i].key==null)){
+        ufos.push({
+          "state":stateData[i].key,
+          "code":stateData[i].values.code,
+          "latitude":stateData[i].values.latitude,
+          "longitude":stateData[i].values.longitude,
+          "radius":circleScale(stateData[i].values.ufocount),
+          "ufocount":stateData[i].values.ufocount,
+          "fillKey": stateData[i].values.code
+        });
+      }
+
+    }
+
+    dataset={}
+    stateData.forEach(function(item){ //
+        // item example value ["USA", 70]
+        var iso = item.values.code,
+                value = item.values.ufocount;
+        dataset[iso] = { numberOfThings: value, fillKey:value,fillColor:"#EDDC4E" };
+    }); 
+
+    var ufoMap = new Datamap({
+    element: document.getElementById('container'),
+    scope: 'usa',
+    geographyConfig: {borderColor: '#DEDEDE',
+        highlightBorderWidth: 2,
+        highlightOnHover:true,
+        // don't change color on mouse hover
+            highlightFillColor: function(geo) {
+                return geo['fillColor'] || '#EDDC4E';
+            },
+        highlightBorderColor: '#B7B7B7',
+        // show desired information in tooltip
+        popupTemplate: function(geo, data) {    
+             // tooltip content
+            return ['<div class="hoverinfo">',
+                '<strong>', geo.properties.name, '</strong>',
+                '<br>UFO Count: <strong>', data.numberOfThings, '</strong>',
+                '</div>'].join('');
+        }
+      },
+      data:dataset,
+    fills: {
+        defaultFill: "#02386F"
+    },
+     done: function(datamap) {
+          
+            datamap.svg.selectAll('.datamaps-subunit').on('click', function(geography) {
+                  renderScatterPlot(geography.properties.name,flag);            });
+        }
+    });
+
+//draw bubbles for ufos
+ufoMap.bubbles(ufos, {
+    popupTemplate:function (geography, data) { 
+            return ['<div class="hoverinfo"><strong>' +  data.state + '</strong>',
+            '<br/>State: ' +  data.state + ' ',
+            '<br/>UFO count: ' +  data.ufocount + '',
+            '</div>'].join('');
+    }
+});
+d3.selectAll('.datamaps-bubble').on('click', function(data) {renderScatterPlot(data.state,flag)});
+
+
+}
+
+function renderScatterPlot(State,flag){
+
+  console.log(flag);
+   //clear the svg so as to accomodate new chart.
+    var elm = d3.select("#detailView");
+    elm.selectAll("*").remove();
+
+  // add the tooltip area to the webpage
+    var tooltip = d3.select("body").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
+
+  var svgWidth = 600;
+  var svgHeight = 500;
+  var margin = {top: 30, right: 20, bottom: 140, left: 100};
+
+  var width = svgWidth - margin.left - margin.right;
+  var height = svgHeight - margin.top - margin.bottom;
+
+  var svg = d3.select('#detailView').attr('width',svgWidth).attr('height',svgHeight).append('g').attr('transform', ' translate(' + margin.left + ',' + margin.top + ')');
+
+  
+  var temp;
+  if(flag==0){
+  temp = d3.nest()
+                      .key(function(d) { if(d.State==State) return d.Shape })
+                      .rollup(function(v) { return v.length})
+                      .entries(data);
+
+  }
+  else{
+  temp = d3.nest()
+                      .key(function(d) { if(d.State==State) return d.Shape })
+                      .rollup(function(v) { return v.length/(v[0].Population/100000)})
+                      .entries(data);
+  }
+
+  var ShapeCount = temp.filter(function(val){ return val.key!="undefined"; });
+  //country names for x axis.
+  var Shapes = ShapeCount.map(function(d) {
+                        return d.key;
+                    });
+
+ //x axis - countries
+  var ShapeScale = d3.scale.ordinal()
+                      .domain(Shapes)
+                      .rangePoints([0, width])
+           
+  //y axis - count of matches won
+  var CountScale = d3.scale.linear()
+                  .domain([0, d3.max(ShapeCount, function(d) { return d.values; })])
+                  .range([height, 0])
+                                      // use nice to round the domain values to nice numbers
+                    .nice();
+
+  var xAxis  = d3.svg.axis().scale(ShapeScale).orient("bottom");
+  var yAxis  = d3.svg.axis().scale(CountScale).orient("left");
+
+  var xValue = function(d) { return d.key;}; // data -> value
+  var yValue = function(d) { return d.values;}; // data -> value
+
+  var xMap =  function(d) { return ShapeScale(xValue(d));}, // data -> display
+     yMap = function(d) { return CountScale(yValue(d));}; // data -> display
+
+svg.append("text")
+          .attr("x", (width / 2))             
+          .attr("y", 0 - (margin.top / 2))
+          .attr("text-anchor", "middle")  
+          .style("font-size", "16px") 
+          .style("text-decoration", "underline")  
+          .text(State);
+
+   // Add the x Axis and rotate its label to be clearly visible.
+  svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .attr("class", "x axis")
+      .call(xAxis)
+      .selectAll("text")
+      .attr("dx","-1em")
+      .style("text-anchor", "end")  
+      .attr("transform", function(d) {
+        return "rotate(-65)" 
+      });
+
+var padding = -5;
+    // Add the y Axis
+  svg.append("g")
+    .attr("transform", "translate("+padding+",0)")
+    .attr("class", "y axis")
+    .call(yAxis)
+
+if(flag==0){
+  // now add titles to the axes
+  svg.append("text")
+      .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+      .attr("transform", "translate("+ (-50) +","+(height/2)+")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
+      .text("UFO count");
+
+      svg.append("text")
+      .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+      .attr("transform", "translate("+ (width/2) +","+(height+ 125)+")")  // centre below axis
+      .text("UFO Shapes");
+}
+else{
+svg.append("text")
+      .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+      .attr("transform", "translate("+ (-50) +","+(height/2)+")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
+      .text("UFO count per 100k people");
+
+      svg.append("text")
+      .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+      .attr("transform", "translate("+ (width/2) +","+(height+ 125)+")")  // centre below axis
+      .text("UFO Shapes");
+
+}
+
+    // draw dots
+  svg.selectAll(".dot")
+      .data(ShapeCount)
+    .enter().append("circle")
+      .attr("class", "dot")
+      .attr("r", 4.5)
+      .attr("cx", xMap)
+      .attr("cy", yMap)
+      .style("fill", function(d) { return "#02386F"}) 
+      .on("mouseover", function(d) {
+          tooltip.transition()
+               .duration(200)
+               .style("opacity", .9);
+          tooltip.html("(" + xValue(d) 
+          + ", " + yValue(d) + ")")
+               .style("left", (d3.event.pageX + 5) + "px")
+               .style("top", (d3.event.pageY - 28) + "px");
+      })
+      .on("mouseout", function(d) {
+          tooltip.transition()
+               .duration(500) 
+               .style("opacity", 0);
+      });
+
+}
+
+
+window.addEventListener('DOMContentLoaded', init);
+
+</script>
+</body>
+</html>
